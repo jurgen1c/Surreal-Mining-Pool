@@ -1,11 +1,8 @@
-#[path = "../utils.rs"]
-mod utils;
-
 use {
   actix_web::{ get, post, Responder },
   actix_web::web::Json,
   crate::models::wallet::*,
-  utils::*,
+  crate::utils::http::*,
 };
 
 // List all Wallets
