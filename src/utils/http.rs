@@ -1,5 +1,3 @@
-use actix_web::body::MessageBody;
-
 use {
   actix_web::HttpResponse,
   serde::{Deserialize, Serialize}

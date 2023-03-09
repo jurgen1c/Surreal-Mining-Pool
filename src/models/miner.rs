@@ -3,17 +3,17 @@ use {
   actix_web::web::Data,
   std::collections::BTreeMap,
   surrealdb::sql::{Object, Value, thing, Array},
+  crate::prelude::*,
+  crate::utils::{macros::map},
+  crate::repository::surrealdb_repo::{Creatable, Patchable, DataBase},
 };
-
-use crate::prelude::*;
-use crate::utils::{macros::map};
-use crate::repository::surrealdb_repo::{Creatable, Patchable, DataBase};
 
 // ----------- Miner JSON Payload (Rest) ----------
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Miner {
   pub id: Option<String>,
+  pub wallet_id: String,
   pub address: String,
   pub club_name: String, 
   pub nickname: String,
@@ -28,6 +28,7 @@ impl From<Miner> for Value {
       Some(v) => {
         map![
           "id".into() => v.into(),
+          "wallet_id".into() => val.wallet_id.into(),
           "address".into() => val.address.into(),
           "nickname".into() => val.nickname.into(),
           "club_name".into() => val.club_name.into(),
@@ -37,6 +38,7 @@ impl From<Miner> for Value {
       },
       None => {
         map![
+          "wallet_id".into() => val.wallet_id.into(),
           "address".into() => val.address.into(),
           "nickname".into() => val.nickname.into(),
           "club_name".into() => val.club_name.into(),
@@ -52,6 +54,7 @@ impl Creatable for Miner{}
 
 // ------ Patch Miner Model --------------
 
+#[derive(Debug, Deserialize, Serialize)]
 pub struct MinerPatch {
   pub address: Option<String>,
   pub club_name: Option<String>, 
@@ -95,7 +98,11 @@ impl Patchable for MinerPatch {}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct NewMinerRequest {
-  nickname: String,
+  pub address: String,
+  pub club_name: String, 
+  pub nickname: String,
+  pub hash_rate: i32, // MH/s
+  pub shares_mined: i32,
 }
 
 // ---------- DAO Object (DB Table Records) ---------

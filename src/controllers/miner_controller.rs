@@ -7,35 +7,48 @@ use {
 
 // List all miners
 #[get("/miners")]
-pub async fn list_miners() -> impl Responder {
-  /*
-    TODO: Get all MinerDAO objects from DB and convert to Miner onjects 
-   */
-  let miners: Vec<Miner> = vec![];
-  print!("In miners controller!!!");
-  ResponseType::Ok(miners).get_response()
+pub async fn list_miners(db: Data<DataBase>) -> impl Responder {
+  let result = MinerDAO::get_all(db).await;
+
+  match result {
+    Ok(miners) => ResponseType::Ok(miners).get_response(),
+    Err(err) => ResponseType::InternalError(err.to_string()).get_response(),
+  }
 }
 
 // Get Miner by id
 #[get("/miners/{id}")]
-pub async fn get_miner() -> impl Responder {
-  /*
-    TODO: Get the Miner DAO object from DB WHERE id = request id and convert to miner object
-   */
-  let miner: Option<Miner> = None;
-  match miner {
-    Some(miner) => ResponseType::Ok(miner).get_response(),
-    None => ResponseType::NotFound(
-      NotFoundMessage::new("No miner found for provided id".into())
+pub async fn get_miner(db: Data<DataBase>, path: Path<String>) -> impl Responder {
+  let id = path.into_inner();
+  if id.is_empty() {
+    return ResponseType::NotFound("invalid ID").get_response();
+  }
+
+  let miner_detail = MinerDAO::get(db, &id).await;
+  match miner_detail {
+    Ok(miner) => ResponseType::Ok(miner).get_response(),
+    Err(err) => ResponseType::NotFound(
+      NotFoundMessage::new(err.to_string())
     ).get_response(),
   }
 }
 
 // Create a new Miner
 #[post("/wallets/{id}/miners")]
-pub async fn create_miner(db: Data<DataBase>, miner_request: Json<Miner>) -> impl Responder {
+pub async fn create_miner(
+  db: Data<DataBase>,
+  miner_request: Json<NewMinerRequest>,
+  path: Path<String>,
+) -> impl Responder {
+  let wallet_id = path.into_inner();
+  if wallet_id.is_empty() {
+    return ResponseType::NotFound("invalid Wallet ID").get_response();
+  }
+  println!("{}", wallet_id);
+
   let miner = Miner {
     id: None,
+    wallet_id: wallet_id,
     address: miner_request.address.to_owned(),
     club_name: miner_request.club_name.to_owned(),
     nickname: miner_request.nickname.to_owned(),
@@ -47,5 +60,49 @@ pub async fn create_miner(db: Data<DataBase>, miner_request: Json<Miner>) -> imp
   match miner_detail {
     Ok(miner) =>  ResponseType::Created(miner).get_response(),
     Err(err) => ResponseType::InternalError::<String>(err.to_string()).get_response(),
+  }
+}
+
+// Update a Miner
+#[put("/miners/{id}")]
+pub async fn update_miner(
+  db: Data<DataBase>,
+  path: Path<String>,
+  miner_patch: Json<MinerPatch>
+) -> impl Responder {
+  let id = path.into_inner();
+  if id.is_empty() {
+    return ResponseType::NotFound("invalid ID").get_response();
+  }
+
+  let data = MinerPatch {
+    address: miner_patch.address.to_owned(),
+    club_name: miner_patch.club_name.to_owned(),
+    nickname: miner_patch.nickname.to_owned(),
+    hash_rate: miner_patch.hash_rate.to_owned(),
+    shares_mined: miner_patch.shares_mined.to_owned(),
+  };
+
+  let update_result = MinerDAO::update(db, &id, data).await;
+
+  match update_result {
+    Ok(miner) => ResponseType::Ok(miner).get_response(),
+    Err(err) => ResponseType::InternalError(err.to_string()).get_response()
+  }
+}
+
+// Delete a Miner
+#[delete("/miner/{id}")]
+pub async fn delete_miner(db: Data<DataBase>, path: Path<String>) -> impl Responder {
+  let id = path.into_inner();
+  if id.is_empty() {
+    return ResponseType::NotFound("invalid ID").get_response();
+  }
+
+  let delete_response = MinerDAO::delete(db, &id).await;
+
+  match delete_response {
+    Ok(miner) => ResponseType::Ok(miner).get_response(),
+    Err(err) => ResponseType::InternalError(err.to_string()).get_response()
   }
 }
