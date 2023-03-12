@@ -75,15 +75,7 @@ pub async fn update_miner(
     return ResponseType::NotFound("invalid ID").get_response();
   }
 
-  let data = MinerPatch {
-    address: miner_patch.address.to_owned(),
-    club_name: miner_patch.club_name.to_owned(),
-    nickname: miner_patch.nickname.to_owned(),
-    hash_rate: miner_patch.hash_rate.to_owned(),
-    shares_mined: miner_patch.shares_mined.to_owned(),
-  };
-
-  let update_result = MinerDAO::update(db, &id, data).await;
+  let update_result = MinerDAO::update(db, &id, miner_patch.into_inner()).await;
 
   match update_result {
     Ok(miner) => ResponseType::Ok(miner).get_response(),

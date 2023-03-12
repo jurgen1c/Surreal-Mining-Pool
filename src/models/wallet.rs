@@ -13,7 +13,7 @@ use {
 
 // ------------- Wallet JSON Payload (REST) --------
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub struct Wallet {
   pub id: Option<String>,
   pub address: String,
@@ -201,5 +201,50 @@ impl WalletDAO {
     first_res.result?;
   
     Ok(mid)
+  }
+}
+
+#[cfg(test)]
+mod test {
+  use super::*;
+
+  fn base_wallet(id: Option<String>) -> Wallet {
+      Wallet {
+      id: id,
+      address: "Some address".into(),
+      club_name: "Some club".into(),
+      total_hash_rate: 32,
+      total_shares_mined: 32,
+      total_workers_online: 32
+    }
+  }
+  #[test]
+  fn builds_wallet_without_id() {
+    assert_eq!(
+      Wallet::new(
+        None,
+        "Some address".into(),
+        "Some club".into(),
+        32,
+        32,
+        32
+      ),
+      base_wallet(None)
+    )
+  }
+
+  #[test]
+  fn builds_wallet_with_id() {
+    assert_eq!(
+      Wallet::new(
+        Some("id".into()),
+        "Some address".into(),
+        "Some club".into(),
+        32,
+        32,
+        32
+      ),
+      base_wallet(Some("id".into()))
+    )
   }
 }
